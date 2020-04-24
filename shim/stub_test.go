@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-chaincode-go/shim/internal/mock"
@@ -19,6 +20,14 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 )
+
+type TestSubModel struct {
+	ID        uint       `gorm:"primary_key"`
+	CreatedAt time.Time  `ormdb:"datatype"`
+	UpdatedAt time.Time  `ormdb:"datatype"`
+	DeletedAt *time.Time `sql:"index" ormdb:"datatype"`
+	Name      string
+}
 
 func toChaincodeArgs(args ...string) [][]byte {
 	ccArgs := make([][]byte, len(args))
@@ -561,6 +570,8 @@ func TestChaincodeStubHandlers(t *testing.T) {
 				resp := s.InvokeChaincode("cc", [][]byte{}, "channel")
 				assert.Equal(t, payload, resp.GetPayload())
 
+				err = s.CreateTable(&TestSubModel{})
+				assert.EqualError(t, err, string(payload))
 			},
 		},
 	}
@@ -599,4 +610,38 @@ func TestChaincodeStubHandlers(t *testing.T) {
 			test.testFunc(stub, handler, t, test.payload)
 		})
 	}
+}
+
+func TestChaincodeStub_CreateTable(t *testing.T) {
+	t.Parallel()
+
+	handler := &Handler{
+		cc:               &mockChaincode{},
+		responseChannels: map[string]chan peerpb.ChaincodeMessage{},
+		state:            ready,
+	}
+	stub := &ChaincodeStub{
+		ChannelID:                  "channel",
+		TxID:                       "txid",
+		handler:                    handler,
+		validationParameterMetakey: "mkey",
+	}
+	chatStream := &mock.PeerChaincodeStream{}
+	chatStream.SendStub = func(msg *peerpb.ChaincodeMessage) error {
+		go func() {
+			handler.handleResponse(
+				&peerpb.ChaincodeMessage{
+					Type:      peerpb.ChaincodeMessage_RESPONSE,
+					ChannelId: msg.GetChannelId(),
+					Txid:      msg.GetTxid(),
+					Payload:   []byte("success"),
+				},
+			)
+		}()
+		return nil
+	}
+	handler.chatStream = chatStream
+	err := stub.CreateTable(&TestSubModel{})
+	assert.NoError(t, err)
+
 }

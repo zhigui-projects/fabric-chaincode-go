@@ -330,6 +330,11 @@ func (s *ChaincodeStub) SetPrivateDataValidationParameter(collection, key string
 	return s.handler.handlePutStateMetadataEntry(collection, key, s.validationParameterMetakey, ep, s.ChannelID, s.TxID)
 }
 
+// CreateTable documentation can be found in interfaces.go
+func (s *ChaincodeStub) CreateTable(model interface{}) error {
+	return s.handler.handleCreateTable(model, s.ChannelID, s.TxID)
+}
+
 // CommonIterator documentation can be found in interfaces.go
 type CommonIterator struct {
 	handler    *Handler

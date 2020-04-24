@@ -346,6 +346,13 @@ type ChaincodeStubInterface interface {
 	// available within the transaction in the committed block regardless of the
 	// validity of the transaction.
 	SetEvent(name string, payload []byte) error
+
+	// CreateTable transform the model struct to internal entity definition.
+	// It will transform a model to a map, key is model name and value is a
+	// slice of field definitions. This function is like PutState, when map
+	// is committed, it will save entity definition to meta table and create
+	// entity table in underlying relation database.
+	CreateTable(models interface{}) error
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

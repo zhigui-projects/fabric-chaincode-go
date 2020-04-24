@@ -294,4 +294,6 @@ func TestHandlePeerCalls(t *testing.T) {
 	_, err = h.handleGetHistoryForKey("key", "channel", "txid")
 	assert.Contains(t, err.Error(), "cannot create response channel")
 
+	err = h.handleCreateTable(&TestSubModel{}, "channel", "txid")
+	assert.Contains(t, err.Error(), "cannot create response channel")
 }
