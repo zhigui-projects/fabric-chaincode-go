@@ -57,6 +57,8 @@ type EntityFieldDefinition struct {
 	EntityName   string            `json:"entity_name"`
 	IsDataType   bool              `json:"is_data_type"`
 	DatatypeName string            `json:"datatype_name"`
+	ID           string            `json:"id"`
+	VerAndMeta   string            `json:"ver_and_meta"`
 }
 
 // Builder is the interface that builds a dynamic and runtime struct.
@@ -320,6 +322,9 @@ func (b *BuilderImpl) AddEntityFieldDefinition(efds []*EntityFieldDefinition, re
 		b.fields[efd.Name] = fieldType
 		b.tags[efd.Name] = efd.Tag
 	}
+
+	b.fields["VerAndMeta"] = reflect.TypeOf(SampleString)
+	b.tags["VerAndMeta"] = `json:"-"`
 
 	return b
 }

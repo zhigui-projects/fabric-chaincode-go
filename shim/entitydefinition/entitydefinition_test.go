@@ -3,10 +3,12 @@ package entitydefinition
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type TestSubModel struct {
@@ -68,6 +70,9 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 			assert.Equal(t, `gorm:"primary_key"`, string(field.Tag))
 		}
 	}
+
+	err = json.Unmarshal(subEntityFieldDefinitionsBytes, &subEntityFieldDefinitions1)
+	assert.NoError(t, err)
 	registry[subKey] = subEntityDS
 	entityDS := NewBuilder().AddEntityFieldDefinition(entityFieldDefinitions1, registry).Build()
 	registry[key] = entityDS
@@ -78,4 +83,15 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 			assert.Equal(t, reflect.TypeOf(sql.NullInt64{}), field.Type)
 		}
 	}
+
+	testSubModel := &TestSubModel{ID: uint(1), Name: "Test", CreatedAt: time.Now()}
+	testSubModelBytes, err := json.Marshal(testSubModel)
+	assert.NoError(t, err)
+
+	testSubModel1 := subEntityDS.Interface()
+	err = json.Unmarshal(testSubModelBytes, testSubModel1)
+	testSubModelBytes1, err := json.Marshal(testSubModel1)
+	assert.NoError(t, err)
+	assert.Equal(t, testSubModelBytes1, testSubModelBytes)
+	fmt.Println(testSubModelBytes1)
 }
