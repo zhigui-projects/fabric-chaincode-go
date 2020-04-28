@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-chaincode-go/shimtest/mock"
@@ -81,6 +82,14 @@ type Marble struct {
 	Color      string `json:"color"`
 	Size       int    `json:"size"`
 	Owner      string `json:"owner"`
+}
+
+type TestSubModel struct {
+	ID        uint       `gorm:"primary_key"`
+	CreatedAt time.Time  `ormdb:"datatype"`
+	UpdatedAt time.Time  `ormdb:"datatype"`
+	DeletedAt *time.Time `sql:"index" ormdb:"datatype"`
+	Name      string
 }
 
 // JSONBytesEqual compares the JSON in two byte slices.
@@ -248,6 +257,16 @@ func TestPutEmptyState(t *testing.T) {
 	assert.Nil(t, val)
 	stub.MockTransactionEnd("5")
 
+}
+
+// TestMockStub_CreateTable confirms that model can be created
+func TestMockStub_CreateTable(t *testing.T) {
+	stub := NewMockStub("MOCK_CREATETABLE", nil)
+
+	// Put an empty and nil state value
+	stub.MockTransactionStart("1")
+	err := stub.CreateTable(&TestSubModel{})
+	assert.NoError(t, err)
 }
 
 // TestMockMock clearly cheating for coverage... but not. Mock should
