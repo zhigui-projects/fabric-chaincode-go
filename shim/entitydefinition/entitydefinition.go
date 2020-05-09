@@ -10,7 +10,6 @@ import (
 
 const (
 	ORMDB_SEPERATOR = "$#$"
-	ORMDB_METATABLE = "ormmetatable_"
 )
 
 const (
@@ -59,6 +58,7 @@ type EntityFieldDefinition struct {
 	DatatypeName string            `json:"datatype_name"`
 	ID           string            `json:"id"`
 	VerAndMeta   string            `json:"ver_and_meta"`
+	Owner        string            `json:"owner"`
 }
 
 // Builder is the interface that builds a dynamic and runtime struct.
@@ -98,6 +98,7 @@ func RegisterEntity(model interface{}) (string, []*EntityFieldDefinition, error)
 		entityFieldDefinition := &EntityFieldDefinition{}
 		entityFieldDefinition.Name = field.Name
 		entityFieldDefinition.Tag = field.Tag
+		entityFieldDefinition.Owner = key
 		entityTag := entityFieldDefinition.Tag.Get("ormdb")
 		switch field.Type.Kind() {
 		case reflect.Ptr:

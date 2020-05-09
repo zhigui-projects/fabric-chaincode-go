@@ -84,7 +84,8 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 		}
 	}
 
-	testSubModel := &TestSubModel{ID: uint(1), Name: "Test", CreatedAt: time.Now()}
+	now := time.Now()
+	testSubModel := &TestSubModel{ID: uint(1), Name: "Test", CreatedAt: now}
 	testSubModelBytes, err := json.Marshal(testSubModel)
 	assert.NoError(t, err)
 
@@ -92,6 +93,8 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 	err = json.Unmarshal(testSubModelBytes, testSubModel1)
 	testSubModelBytes1, err := json.Marshal(testSubModel1)
 	assert.NoError(t, err)
-	assert.Equal(t, testSubModelBytes1, testSubModelBytes)
+	assert.Equal(t, "Test", reflect.ValueOf(testSubModel1).Elem().FieldByName("Name").String())
+	assert.Equal(t, now.Local(), reflect.ValueOf(testSubModel1).Elem().FieldByName("CreatedAt").Interface())
+	assert.Equal(t, uint64(1), reflect.ValueOf(testSubModel1).Elem().FieldByName("ID").Uint())
 	fmt.Println(testSubModelBytes1)
 }
