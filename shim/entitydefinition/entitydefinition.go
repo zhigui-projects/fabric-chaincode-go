@@ -59,11 +59,12 @@ type EntityFieldDefinition struct {
 	ID           string            `json:"id"`
 	VerAndMeta   string            `json:"ver_and_meta"`
 	Owner        string            `json:"owner"`
+	Seq          int               `json:"seq" gorm:"AUTO_INCREMENT"`
 }
 
 // Builder is the interface that builds a dynamic and runtime struct.
 type Builder interface {
-	AddEntityFieldDefinition(definition []*EntityFieldDefinition, registry map[string]DynamicStruct) Builder
+	AddEntityFieldDefinition(definition []EntityFieldDefinition, registry map[string]DynamicStruct) Builder
 	Remove(name string) Builder
 	Exists(name string) bool
 	NumField() int
@@ -82,7 +83,7 @@ func NewBuilder() Builder {
 	return &BuilderImpl{fields: map[string]reflect.Type{}, tags: map[string]reflect.StructTag{}}
 }
 
-func RegisterEntity(model interface{}) (string, []*EntityFieldDefinition, error) {
+func RegisterEntity(model interface{}) (string, []EntityFieldDefinition, error) {
 	modelType := reflect.TypeOf(model)
 	if modelType.Kind() != reflect.Ptr {
 		return "", nil, errors.New("model must be a pointer")
@@ -92,10 +93,10 @@ func RegisterEntity(model interface{}) (string, []*EntityFieldDefinition, error)
 		return "", nil, errors.New("model value must be a struct")
 	}
 	key := modelElem.Name()
-	var entityFieldDefinitions []*EntityFieldDefinition
+	var entityFieldDefinitions []EntityFieldDefinition
 	for i := 0; i < modelElem.NumField(); i++ {
 		field := modelElem.Field(i)
-		entityFieldDefinition := &EntityFieldDefinition{}
+		entityFieldDefinition := EntityFieldDefinition{}
 		entityFieldDefinition.Name = field.Name
 		entityFieldDefinition.Tag = field.Tag
 		entityFieldDefinition.Owner = key
@@ -185,7 +186,7 @@ func RegisterEntity(model interface{}) (string, []*EntityFieldDefinition, error)
 	return key, entityFieldDefinitions, nil
 }
 
-func (b *BuilderImpl) AddEntityFieldDefinition(efds []*EntityFieldDefinition, registry map[string]DynamicStruct) Builder {
+func (b *BuilderImpl) AddEntityFieldDefinition(efds []EntityFieldDefinition, registry map[string]DynamicStruct) Builder {
 	for _, efd := range efds {
 		var fieldType reflect.Type
 		switch efd.Kind {

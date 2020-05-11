@@ -3,7 +3,6 @@ package entitydefinition
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -49,7 +48,7 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Unmarshal test for entityFieldDefinitions
-	var subEntityFieldDefinitions1 []*EntityFieldDefinition
+	var subEntityFieldDefinitions1 []EntityFieldDefinition
 	err = json.Unmarshal(subEntityFieldDefinitionsBytes, &subEntityFieldDefinitions1)
 	assert.NoError(t, err)
 	for _, e := range subEntityFieldDefinitions1 {
@@ -57,7 +56,7 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 			assert.Equal(t, reflect.Uint, e.Kind)
 		}
 	}
-	var entityFieldDefinitions1 []*EntityFieldDefinition
+	var entityFieldDefinitions1 []EntityFieldDefinition
 	err = json.Unmarshal(entityFieldDefinitionsBytes, &entityFieldDefinitions1)
 	assert.NoError(t, err)
 
@@ -91,10 +90,19 @@ func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 
 	testSubModel1 := subEntityDS.Interface()
 	err = json.Unmarshal(testSubModelBytes, testSubModel1)
-	testSubModelBytes1, err := json.Marshal(testSubModel1)
 	assert.NoError(t, err)
 	assert.Equal(t, "Test", reflect.ValueOf(testSubModel1).Elem().FieldByName("Name").String())
 	assert.Equal(t, now.Local(), reflect.ValueOf(testSubModel1).Elem().FieldByName("CreatedAt").Interface())
 	assert.Equal(t, uint64(1), reflect.ValueOf(testSubModel1).Elem().FieldByName("ID").Uint())
-	fmt.Println(testSubModelBytes1)
+
+	testModel := &TestModel{Name: "Test", Role: "SS", Age: sql.NullInt64{Int64: int64(1)}, TestSubModels: []TestSubModel{*testSubModel}}
+	testModelBytes, err := json.Marshal(testModel)
+	assert.NoError(t, err)
+
+	testModel1 := entityDS.Interface()
+	err = json.Unmarshal(testModelBytes, testModel1)
+	assert.NoError(t, err)
+	assert.Equal(t, "Test", reflect.ValueOf(testModel1).Elem().FieldByName("Name").String())
+	assert.Equal(t, "SS", reflect.ValueOf(testModel1).Elem().FieldByName("Role").String())
+	assert.Equal(t, sql.NullInt64{Int64: int64(1)}, reflect.ValueOf(testModel1).Elem().FieldByName("Age").Interface())
 }
