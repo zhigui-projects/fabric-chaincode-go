@@ -352,7 +352,7 @@ type ChaincodeStubInterface interface {
 	// slice of field definitions. This function is like PutState, when map
 	// is committed, it will save entity definition to meta table and create
 	// entity table in underlying relation database.
-	CreateTable(models interface{}) error
+	CreateTable(models interface{}, seq int) error
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

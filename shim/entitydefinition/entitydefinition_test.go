@@ -36,9 +36,9 @@ type TestModel struct {
 
 func TestRegisterEntityAndDynamicStruct(t *testing.T) {
 	// Transform model to entityFieldDefinitions
-	subKey, subEntityFieldDefinitions, err := RegisterEntity(&TestSubModel{})
+	subKey, subEntityFieldDefinitions, err := RegisterEntity(&TestSubModel{}, 1)
 	assert.NoError(t, err)
-	key, entityFieldDefinitions, err := RegisterEntity(&TestModel{})
+	key, entityFieldDefinitions, err := RegisterEntity(&TestModel{}, 2)
 	assert.NoError(t, err)
 
 	// Marshal test for entityFieldDefinitions

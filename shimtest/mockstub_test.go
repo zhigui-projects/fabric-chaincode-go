@@ -265,7 +265,7 @@ func TestMockStub_CreateTable(t *testing.T) {
 
 	// Put an empty and nil state value
 	stub.MockTransactionStart("1")
-	err := stub.CreateTable(&TestSubModel{})
+	err := stub.CreateTable(&TestSubModel{}, 1)
 	assert.NoError(t, err)
 }
 

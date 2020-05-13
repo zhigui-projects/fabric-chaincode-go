@@ -606,10 +606,10 @@ func (h *Handler) handleInvokeChaincode(chaincodeName string, args [][]byte, cha
 }
 
 // handleCreateTable communicates with the peer to pass entity struct definition information into the ledger.
-func (h *Handler) handleCreateTable(model interface{}, channelID string, txid string) error {
+func (h *Handler) handleCreateTable(model interface{}, seq int, channelID string, txid string) error {
 	// Access public data by setting the collection to empty string
 	collection := ""
-	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model)
+	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model, seq)
 
 	value, err := json.Marshal(entityFieldDefinitions)
 	// Construct payload for PUT_STATE

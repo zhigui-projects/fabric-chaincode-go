@@ -570,7 +570,7 @@ func TestChaincodeStubHandlers(t *testing.T) {
 				resp := s.InvokeChaincode("cc", [][]byte{}, "channel")
 				assert.Equal(t, payload, resp.GetPayload())
 
-				err = s.CreateTable(&TestSubModel{})
+				err = s.CreateTable(&TestSubModel{}, 1)
 				assert.EqualError(t, err, string(payload))
 			},
 		},
@@ -641,7 +641,7 @@ func TestChaincodeStub_CreateTable(t *testing.T) {
 		return nil
 	}
 	handler.chatStream = chatStream
-	err := stub.CreateTable(&TestSubModel{})
+	err := stub.CreateTable(&TestSubModel{}, 1)
 	assert.NoError(t, err)
 
 }

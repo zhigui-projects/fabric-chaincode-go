@@ -331,8 +331,8 @@ func (s *ChaincodeStub) SetPrivateDataValidationParameter(collection, key string
 }
 
 // CreateTable documentation can be found in interfaces.go
-func (s *ChaincodeStub) CreateTable(model interface{}) error {
-	return s.handler.handleCreateTable(model, s.ChannelID, s.TxID)
+func (s *ChaincodeStub) CreateTable(model interface{}, seq int) error {
+	return s.handler.handleCreateTable(model, seq, s.ChannelID, s.TxID)
 }
 
 // CommonIterator documentation can be found in interfaces.go

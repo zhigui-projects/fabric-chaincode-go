@@ -494,8 +494,8 @@ func NewMockStub(name string, cc shim.Chaincode) *MockStub {
 }
 
 // CreateTable writes the specified `model` definition into the ledger.
-func (stub *MockStub) CreateTable(model interface{}) error {
-	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model)
+func (stub *MockStub) CreateTable(model interface{}, seq int) error {
+	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model, seq)
 	if err != nil {
 		return err
 	}

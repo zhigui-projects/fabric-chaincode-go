@@ -83,7 +83,7 @@ func NewBuilder() Builder {
 	return &BuilderImpl{fields: map[string]reflect.Type{}, tags: map[string]reflect.StructTag{}}
 }
 
-func RegisterEntity(model interface{}) (string, []EntityFieldDefinition, error) {
+func RegisterEntity(model interface{}, seq int) (string, []EntityFieldDefinition, error) {
 	modelType := reflect.TypeOf(model)
 	if modelType.Kind() != reflect.Ptr {
 		return "", nil, errors.New("model must be a pointer")
@@ -100,6 +100,7 @@ func RegisterEntity(model interface{}) (string, []EntityFieldDefinition, error) 
 		entityFieldDefinition.Name = field.Name
 		entityFieldDefinition.Tag = field.Tag
 		entityFieldDefinition.Owner = key
+		entityFieldDefinition.Seq = seq
 		entityTag := entityFieldDefinition.Tag.Get("ormdb")
 		switch field.Type.Kind() {
 		case reflect.Ptr:
