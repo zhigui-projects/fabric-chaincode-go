@@ -59,7 +59,7 @@ type EntityFieldDefinition struct {
 	ID           string            `json:"id"`
 	VerAndMeta   string            `json:"ver_and_meta"`
 	Owner        string            `json:"owner"`
-	Seq          int               `json:"seq" gorm:"AUTO_INCREMENT"`
+	Seq          int               `json:"seq"`
 }
 
 // Builder is the interface that builds a dynamic and runtime struct.
