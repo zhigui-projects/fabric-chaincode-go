@@ -391,13 +391,6 @@ type Impl struct {
 func newDs(fs []reflect.StructField, isPtr bool) DynamicStruct {
 	ds := &Impl{structType: reflect.StructOf(fs), isPtr: isPtr}
 
-	n := reflect.New(ds.structType)
-	if isPtr {
-		ds.intf = n.Interface()
-	} else {
-		ds.intf = reflect.Indirect(n).Interface()
-	}
-
 	return ds
 }
 
@@ -424,7 +417,12 @@ func (ds *Impl) IsPtr() bool {
 
 // Interface returns the interface of built struct.
 func (ds *Impl) Interface() interface{} {
-	return ds.intf
+	n := reflect.New(ds.structType)
+	if ds.isPtr {
+		return n.Interface()
+	} else {
+		return reflect.Indirect(n).Interface()
+	}
 }
 
 func (ds *Impl) StructType() reflect.Type {
