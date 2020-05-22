@@ -29,37 +29,57 @@ const (
 	SampleFloat64 = float64(1.1)
 )
 
-var datatype map[string]reflect.Type
+var (
+	PrimitiveFlag   = byte('p')
+	DataTypeFlag    = byte('d')
+	SliceTypeFlag   = byte('s')
+	NoSliceTypeFlag = byte('n')
+
+	TimeTimeTypeKey       = byte('1')
+	SqlNullBoolTypeKey    = byte('2')
+	SqlNullFloat64TypeKey = byte('3')
+	SqlNullInt64TypeKey   = byte('4')
+	SqlNullStringTypeKey  = byte('5')
+)
+
+var datatype map[byte]reflect.Type
+var nameKey map[string]byte
 
 func init() {
-	datatype = make(map[string]reflect.Type)
+	datatype = make(map[byte]reflect.Type)
+	nameKey = make(map[string]byte)
 	timeTimeType := reflect.TypeOf(time.Time{})
-	datatype[timeTimeType.PkgPath()+ORMDB_SEPERATOR+timeTimeType.Name()] = timeTimeType
+	nameKey[timeTimeType.PkgPath()+ORMDB_SEPERATOR+timeTimeType.Name()] = TimeTimeTypeKey
+	datatype[TimeTimeTypeKey] = timeTimeType
 	sqlNullBoolType := reflect.TypeOf(sql.NullBool{})
-	datatype[sqlNullBoolType.PkgPath()+ORMDB_SEPERATOR+sqlNullBoolType.Name()] = sqlNullBoolType
-	sqlNullFloat64 := reflect.TypeOf(sql.NullFloat64{})
-	datatype[sqlNullFloat64.PkgPath()+ORMDB_SEPERATOR+sqlNullFloat64.Name()] = sqlNullFloat64
-	sqlNullInt64 := reflect.TypeOf(sql.NullInt64{})
-	datatype[sqlNullInt64.PkgPath()+ORMDB_SEPERATOR+sqlNullInt64.Name()] = sqlNullInt64
-	sqlNullString := reflect.TypeOf(sql.NullString{})
-	datatype[sqlNullString.PkgPath()+ORMDB_SEPERATOR+sqlNullString.Name()] = sqlNullString
+	nameKey[sqlNullBoolType.PkgPath()+ORMDB_SEPERATOR+sqlNullBoolType.Name()] = SqlNullBoolTypeKey
+	datatype[SqlNullBoolTypeKey] = sqlNullBoolType
+	sqlNullFloat64Type := reflect.TypeOf(sql.NullFloat64{})
+	nameKey[sqlNullFloat64Type.PkgPath()+ORMDB_SEPERATOR+sqlNullFloat64Type.Name()] = SqlNullFloat64TypeKey
+	datatype[SqlNullFloat64TypeKey] = sqlNullFloat64Type
+	sqlNullInt64Type := reflect.TypeOf(sql.NullInt64{})
+	nameKey[sqlNullInt64Type.PkgPath()+ORMDB_SEPERATOR+sqlNullInt64Type.Name()] = SqlNullInt64TypeKey
+	datatype[SqlNullInt64TypeKey] = sqlNullInt64Type
+	sqlNullStringType := reflect.TypeOf(sql.NullString{})
+	nameKey[sqlNullStringType.PkgPath()+ORMDB_SEPERATOR+sqlNullStringType.Name()] = SqlNullStringTypeKey
+	datatype[SqlNullStringTypeKey] = sqlNullStringType
 }
 
 type EntityFieldDefinition struct {
-	Name         string            `json:"name"`
-	Kind         reflect.Kind      `json:"kind"`
-	ElemKind     reflect.Kind      `json:"value_kind"`
-	IsPtr        bool              `json:"is_ptr"`
-	IsElemPtr    bool              `json:"is_elem_ptr"`
-	Tag          reflect.StructTag `json:"tag"`
-	IsEntity     bool              `json:"is_entity"`
-	EntityName   string            `json:"entity_name"`
-	IsDataType   bool              `json:"is_data_type"`
-	DatatypeName string            `json:"datatype_name"`
-	ID           string            `json:"id"`
-	VerAndMeta   string            `json:"ver_and_meta"`
-	Owner        string            `json:"owner"`
-	Seq          int               `json:"seq"`
+	Name        string            `json:"name"`
+	Kind        reflect.Kind      `json:"kind"`
+	ElemKind    reflect.Kind      `json:"value_kind"`
+	IsPtr       bool              `json:"is_ptr"`
+	IsElemPtr   bool              `json:"is_elem_ptr"`
+	Tag         reflect.StructTag `json:"tag"`
+	IsEntity    bool              `json:"is_entity"`
+	EntityName  string            `json:"entity_name"`
+	IsDataType  bool              `json:"is_data_type"`
+	DatatypeKey byte              `json:"datatype_key"`
+	ID          string            `json:"id"`
+	VerAndMeta  string            `json:"ver_and_meta"`
+	Owner       string            `json:"owner"`
+	Seq         int               `json:"seq"`
 }
 
 // Builder is the interface that builds a dynamic and runtime struct.
@@ -110,7 +130,7 @@ func RegisterEntity(model interface{}, seq int) (string, []EntityFieldDefinition
 				pkgPath := field.Type.Elem().PkgPath()
 				fullName := pkgPath + ORMDB_SEPERATOR + name
 				entityFieldDefinition.IsDataType = true
-				entityFieldDefinition.DatatypeName = fullName
+				entityFieldDefinition.DatatypeKey = nameKey[fullName]
 			}
 			if strings.ToUpper(entityTag) == "ENTITY" {
 				entityFieldDefinition.IsEntity = true
@@ -127,7 +147,7 @@ func RegisterEntity(model interface{}, seq int) (string, []EntityFieldDefinition
 				pkgPath := field.Type.PkgPath()
 				fullName := pkgPath + ORMDB_SEPERATOR + name
 				entityFieldDefinition.IsDataType = true
-				entityFieldDefinition.DatatypeName = fullName
+				entityFieldDefinition.DatatypeKey = nameKey[fullName]
 			}
 			if strings.ToUpper(entityTag) == "ENTITY" {
 				entityFieldDefinition.IsEntity = true
@@ -142,7 +162,7 @@ func RegisterEntity(model interface{}, seq int) (string, []EntityFieldDefinition
 					pkgPath := field.Type.Elem().PkgPath()
 					fullName := pkgPath + ORMDB_SEPERATOR + name
 					entityFieldDefinition.IsDataType = true
-					entityFieldDefinition.DatatypeName = fullName
+					entityFieldDefinition.DatatypeKey = nameKey[fullName]
 				}
 				if strings.ToUpper(entityTag) == "ENTITY" {
 					entityFieldDefinition.IsEntity = true
@@ -160,7 +180,7 @@ func RegisterEntity(model interface{}, seq int) (string, []EntityFieldDefinition
 					pkgPath := field.Type.Elem().PkgPath()
 					fullName := pkgPath + ORMDB_SEPERATOR + name
 					entityFieldDefinition.IsDataType = true
-					entityFieldDefinition.DatatypeName = fullName
+					entityFieldDefinition.DatatypeKey = nameKey[fullName]
 				}
 				if strings.ToUpper(entityTag) == "ENTITY" {
 					entityFieldDefinition.IsEntity = true
@@ -194,7 +214,7 @@ func (b *BuilderImpl) AddEntityFieldDefinition(efds []EntityFieldDefinition, reg
 		case reflect.Slice:
 			var elemType reflect.Type
 			if efd.IsDataType {
-				elemType = datatype[efd.DatatypeName]
+				elemType = datatype[efd.DatatypeKey]
 			}
 			if efd.IsEntity {
 				elemType = registry[efd.EntityName].StructType()
@@ -240,7 +260,7 @@ func (b *BuilderImpl) AddEntityFieldDefinition(efds []EntityFieldDefinition, reg
 		case reflect.Ptr:
 			var elemType reflect.Type
 			if efd.IsDataType {
-				elemType = datatype[efd.DatatypeName]
+				elemType = datatype[efd.DatatypeKey]
 			}
 			if efd.IsEntity {
 				elemType = registry[efd.EntityName].StructType()
@@ -285,7 +305,7 @@ func (b *BuilderImpl) AddEntityFieldDefinition(efds []EntityFieldDefinition, reg
 			}
 		case reflect.Struct:
 			if efd.IsDataType {
-				fieldType = datatype[efd.DatatypeName]
+				fieldType = datatype[efd.DatatypeKey]
 			}
 			if efd.IsEntity {
 				fieldType = registry[efd.EntityName].StructType()
