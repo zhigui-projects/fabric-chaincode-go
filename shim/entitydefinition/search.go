@@ -16,6 +16,7 @@ type Search struct {
 	OrderConditions []string
 	OffsetCondition int
 	LimitCondition  int
+	Entity          string
 }
 
 func (s *Search) Where(query string, values ...interface{}) error {
