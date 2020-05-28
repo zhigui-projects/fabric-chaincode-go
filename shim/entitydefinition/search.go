@@ -111,3 +111,114 @@ func encodeValues(values []interface{}) ([][]byte, error) {
 	}
 	return valueBytes, nil
 }
+
+func decodeValues(values [][]byte) ([]interface{}, error) {
+	args := make([]interface{}, 0)
+	var err error
+	for _, value := range values {
+		isSliceFlag := value[0]
+		isPrimitiveFlag := value[1]
+		if NoSliceTypeFlag == isSliceFlag {
+			if PrimitiveFlag == isPrimitiveFlag {
+				kind, n := proto.DecodeVarint(value[2:])
+				var elemType reflect.Type
+				switch reflect.Kind(kind) {
+				case reflect.Uint:
+					elemType = reflect.TypeOf(SampleUint)
+				case reflect.Uint8:
+					elemType = reflect.TypeOf(SampleUint8)
+				case reflect.Uint16:
+					elemType = reflect.TypeOf(SampleUint16)
+				case reflect.Uint32:
+					elemType = reflect.TypeOf(SampleUint32)
+				case reflect.Uint64:
+					elemType = reflect.TypeOf(SampleUint64)
+				case reflect.Int:
+					elemType = reflect.TypeOf(SampleInt)
+				case reflect.Int8:
+					elemType = reflect.TypeOf(SampleInt8)
+				case reflect.Int16:
+					elemType = reflect.TypeOf(SampleInt16)
+				case reflect.Int32:
+					elemType = reflect.TypeOf(SampleInt32)
+				case reflect.Int64:
+					elemType = reflect.TypeOf(SampleInt64)
+				case reflect.String:
+					elemType = reflect.TypeOf(SampleString)
+				case reflect.Bool:
+					elemType = reflect.TypeOf(SampleBool)
+				case reflect.Float32:
+					elemType = reflect.TypeOf(SampleFloat32)
+				case reflect.Float64:
+					elemType = reflect.TypeOf(SampleFloat64)
+				default:
+					return nil, errors.New("not supported data type")
+				}
+				elem := reflect.New(elemType).Interface()
+				d := gob.NewDecoder(bytes.NewBuffer(value[2+n:]))
+				err = d.Decode(elem)
+				args = append(args, reflect.ValueOf(elem).Elem().Interface())
+			} else if DataTypeFlag == isPrimitiveFlag {
+				typeKey := value[2]
+				t := datatype[typeKey]
+				elem := reflect.New(t).Interface()
+				d := gob.NewDecoder(bytes.NewBuffer(value[3:]))
+				err = d.Decode(elem)
+				args = append(args, reflect.ValueOf(elem).Elem().Interface())
+			} else {
+				return nil, errors.New("not supported data type")
+			}
+		} else if SliceTypeFlag == isSliceFlag {
+			if PrimitiveFlag == isPrimitiveFlag {
+				kind, n := proto.DecodeVarint(value[2:])
+				var elemType reflect.Type
+				switch reflect.Kind(kind) {
+				case reflect.Uint:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleUint))
+				case reflect.Uint8:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleUint8))
+				case reflect.Uint16:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleUint16))
+				case reflect.Uint32:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleUint32))
+				case reflect.Uint64:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleUint64))
+				case reflect.Int:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleInt))
+				case reflect.Int8:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleInt8))
+				case reflect.Int16:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleInt16))
+				case reflect.Int32:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleInt32))
+				case reflect.Int64:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleInt64))
+				case reflect.String:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleString))
+				case reflect.Bool:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleBool))
+				case reflect.Float32:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleFloat32))
+				case reflect.Float64:
+					elemType = reflect.SliceOf(reflect.TypeOf(SampleFloat64))
+				default:
+					return nil, errors.New("not supported data type")
+				}
+				elem := reflect.New(elemType).Interface()
+				d := gob.NewDecoder(bytes.NewBuffer(value[2+n:]))
+				err = d.Decode(elem)
+				args = append(args, reflect.ValueOf(elem).Elem().Interface())
+			} else if DataTypeFlag == isPrimitiveFlag {
+				typeKey := value[2]
+				t := datatype[typeKey]
+				elem := reflect.New(reflect.SliceOf(t)).Interface()
+				d := gob.NewDecoder(bytes.NewBuffer(value[3:]))
+				err = d.Decode(elem)
+				args = append(args, reflect.ValueOf(elem).Elem().Interface())
+			} else {
+				return nil, errors.New("not supported data type")
+			}
+		}
+	}
+	return args, err
+}

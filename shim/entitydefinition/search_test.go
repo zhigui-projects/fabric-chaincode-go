@@ -70,4 +70,7 @@ func TestSearch(t *testing.T) {
 	assert.Equal(t, "id desc, name", search1.OrderConditions[0])
 	assert.Equal(t, 10, search1.OffsetCondition)
 	assert.Equal(t, 20, search1.LimitCondition)
+
+	argsDecode, err := decodeValues(search1.WhereConditions[0]["args"])
+	assert.Equal(t, 3, len(argsDecode))
 }
