@@ -30,11 +30,6 @@ const (
 )
 
 var (
-	PrimitiveFlag   = byte('p')
-	DataTypeFlag    = byte('d')
-	SliceTypeFlag   = byte('s')
-	NoSliceTypeFlag = byte('n')
-
 	TimeTimeTypeKey       = byte('1')
 	SqlNullBoolTypeKey    = byte('2')
 	SqlNullFloat64TypeKey = byte('3')

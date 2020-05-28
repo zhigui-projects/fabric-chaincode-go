@@ -9,6 +9,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+var (
+	PrimitiveFlag   = byte('p')
+	DataTypeFlag    = byte('d')
+	SliceTypeFlag   = byte('s')
+	NoSliceTypeFlag = byte('n')
+)
+
 type Search struct {
 	WhereConditions []map[string][][]byte
 	NotConditions   []map[string][][]byte
@@ -112,7 +119,7 @@ func encodeValues(values []interface{}) ([][]byte, error) {
 	return valueBytes, nil
 }
 
-func decodeValues(values [][]byte) ([]interface{}, error) {
+func DecodeSearchValues(values [][]byte) ([]interface{}, error) {
 	args := make([]interface{}, 0)
 	var err error
 	for _, value := range values {
