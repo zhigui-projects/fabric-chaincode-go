@@ -6,6 +6,8 @@ package shim
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/json"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"os"
 	"testing"
 	"time"
@@ -22,7 +24,7 @@ import (
 )
 
 type TestSubModel struct {
-	ID        uint       `gorm:"primary_key"`
+	ID        string     `gorm:"primary_key"`
 	CreatedAt time.Time  `ormdb:"datatype"`
 	UpdatedAt time.Time  `ormdb:"datatype"`
 	DeletedAt *time.Time `sql:"index" ormdb:"datatype"`
@@ -642,6 +644,153 @@ func TestChaincodeStub_CreateTable(t *testing.T) {
 	}
 	handler.chatStream = chatStream
 	err := stub.CreateTable(&TestSubModel{}, 1)
+	assert.NoError(t, err)
+}
+
+func TestChaincodeStub_Save(t *testing.T) {
+	t.Parallel()
+
+	handler := &Handler{
+		cc:               &mockChaincode{},
+		responseChannels: map[string]chan peerpb.ChaincodeMessage{},
+		state:            ready,
+	}
+	stub := &ChaincodeStub{
+		ChannelID:                  "channel",
+		TxID:                       "txid",
+		handler:                    handler,
+		validationParameterMetakey: "mkey",
+	}
+	chatStream := &mock.PeerChaincodeStream{}
+	chatStream.SendStub = func(msg *peerpb.ChaincodeMessage) error {
+		go func() {
+			handler.handleResponse(
+				&peerpb.ChaincodeMessage{
+					Type:      peerpb.ChaincodeMessage_RESPONSE,
+					ChannelId: msg.GetChannelId(),
+					Txid:      msg.GetTxid(),
+					Payload:   []byte("success"),
+				},
+			)
+		}()
+		return nil
+	}
+	handler.chatStream = chatStream
+	err := stub.Save(&TestSubModel{})
+	assert.NoError(t, err)
+
+}
+
+func TestChaincodeStub_Get(t *testing.T) {
+	t.Parallel()
+	testModel := &TestSubModel{ID: "id", Name: "name"}
+	res, err := json.Marshal(testModel)
+
+	handler := &Handler{
+		cc:               &mockChaincode{},
+		responseChannels: map[string]chan peerpb.ChaincodeMessage{},
+		state:            ready,
+	}
+	stub := &ChaincodeStub{
+		ChannelID:                  "channel",
+		TxID:                       "txid",
+		handler:                    handler,
+		validationParameterMetakey: "mkey",
+	}
+	chatStream := &mock.PeerChaincodeStream{}
+	chatStream.SendStub = func(msg *peerpb.ChaincodeMessage) error {
+		go func() {
+			handler.handleResponse(
+				&peerpb.ChaincodeMessage{
+					Type:      peerpb.ChaincodeMessage_RESPONSE,
+					ChannelId: msg.GetChannelId(),
+					Txid:      msg.GetTxid(),
+					Payload:   res,
+				},
+			)
+		}()
+		return nil
+	}
+	handler.chatStream = chatStream
+	actual := &TestSubModel{}
+	err = stub.Get(actual, "id")
+	assert.Equal(t, "name", actual.Name)
+	assert.NoError(t, err)
+}
+
+func TestChaincodeStub_Delete(t *testing.T) {
+	t.Parallel()
+
+	handler := &Handler{
+		cc:               &mockChaincode{},
+		responseChannels: map[string]chan peerpb.ChaincodeMessage{},
+		state:            ready,
+	}
+	stub := &ChaincodeStub{
+		ChannelID:                  "channel",
+		TxID:                       "txid",
+		handler:                    handler,
+		validationParameterMetakey: "mkey",
+	}
+	chatStream := &mock.PeerChaincodeStream{}
+	chatStream.SendStub = func(msg *peerpb.ChaincodeMessage) error {
+		go func() {
+			handler.handleResponse(
+				&peerpb.ChaincodeMessage{
+					Type:      peerpb.ChaincodeMessage_RESPONSE,
+					ChannelId: msg.GetChannelId(),
+					Txid:      msg.GetTxid(),
+					Payload:   []byte("success"),
+				},
+			)
+		}()
+		return nil
+	}
+	handler.chatStream = chatStream
+	err := stub.Delete("id")
+	assert.NoError(t, err)
+
+}
+
+func TestChaincodeStub_ConditionQuery(t *testing.T) {
+	t.Parallel()
+
+	models := make([]TestSubModel, 2)
+	models = append(models, TestSubModel{ID: "id1"})
+	models = append(models, TestSubModel{ID: "id2"})
+	res, err := json.Marshal(&models)
+
+	handler := &Handler{
+		cc:               &mockChaincode{},
+		responseChannels: map[string]chan peerpb.ChaincodeMessage{},
+		state:            ready,
+	}
+	stub := &ChaincodeStub{
+		ChannelID:                  "channel",
+		TxID:                       "txid",
+		handler:                    handler,
+		validationParameterMetakey: "mkey",
+	}
+	chatStream := &mock.PeerChaincodeStream{}
+	chatStream.SendStub = func(msg *peerpb.ChaincodeMessage) error {
+		go func() {
+			handler.handleResponse(
+				&peerpb.ChaincodeMessage{
+					Type:      peerpb.ChaincodeMessage_RESPONSE,
+					ChannelId: msg.GetChannelId(),
+					Txid:      msg.GetTxid(),
+					Payload:   res,
+				},
+			)
+		}()
+		return nil
+	}
+	handler.chatStream = chatStream
+	var actualModels []TestSubModel
+	search := &entitydefinition.Search{}
+	_ = search.Not("id = ?", "id")
+	_ = search.Where("name = ?", "name")
+	err = stub.ConditionQuery(actualModels, *search)
 	assert.NoError(t, err)
 
 }

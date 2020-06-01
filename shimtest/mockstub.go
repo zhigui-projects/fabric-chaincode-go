@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
+	"reflect"
 	"strings"
 	"unicode/utf8"
 
@@ -75,6 +76,16 @@ type MockStub struct {
 	Creator []byte
 
 	Decorations map[string][]byte
+}
+
+func (stub *MockStub) Get(model interface{}, id string) error {
+	value := stub.State[id]
+	_ = json.Unmarshal(value, model)
+	return nil
+}
+
+func (stub *MockStub) ConditionQuery(models interface{}, search entitydefinition.Search) error {
+	return errors.New("not implemented")
 }
 
 // GetTxID ...
@@ -532,6 +543,60 @@ func (stub *MockStub) CreateTable(model interface{}, seq int) error {
 	// special case for empty Keys list
 	if stub.Keys.Len() == 0 {
 		stub.Keys.PushFront(key)
+	}
+
+	return nil
+}
+
+// Save writes the specified `model` into the ledger.
+func (stub *MockStub) Save(model interface{}) error {
+	if stub.TxID == "" {
+		err := errors.New("cannot Save without a transactions - call stub.MockTransactionStart()?")
+		return err
+	}
+	key := reflect.ValueOf(model).Elem().FieldByName("ID").String()
+	value, err := json.Marshal(model)
+	if err != nil {
+		return err
+	}
+	stub.State[key] = value
+
+	// insert key into ordered list of keys
+	for elem := stub.Keys.Front(); elem != nil; elem = elem.Next() {
+		elemValue := elem.Value.(string)
+		comp := strings.Compare(key, elemValue)
+		if comp < 0 {
+			// key < elem, insert it before elem
+			stub.Keys.InsertBefore(key, elem)
+			break
+		} else if comp == 0 {
+			// keys exists, no need to change
+			break
+		} else { // comp > 0
+			// key > elem, keep looking unless this is the end of the list
+			if elem.Next() == nil {
+				stub.Keys.PushBack(key)
+				break
+			}
+		}
+	}
+
+	// special case for empty Keys list
+	if stub.Keys.Len() == 0 {
+		stub.Keys.PushFront(key)
+	}
+
+	return nil
+}
+
+// Delete removes the specified `model` from the ledger.
+func (stub *MockStub) Delete(id string) error {
+	delete(stub.State, id)
+
+	for elem := stub.Keys.Front(); elem != nil; elem = elem.Next() {
+		if strings.Compare(id, elem.Value.(string)) == 0 {
+			stub.Keys.Remove(elem)
+		}
 	}
 
 	return nil

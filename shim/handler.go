@@ -4,10 +4,8 @@
 package shim
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -605,36 +603,26 @@ func (h *Handler) handleInvokeChaincode(chaincodeName string, args [][]byte, cha
 	return h.createResponse(ERROR, []byte(fmt.Sprintf("[%s] Incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)))
 }
 
-// handleCreateTable communicates with the peer to pass entity struct definition information into the ledger.
-func (h *Handler) handleCreateTable(model interface{}, seq int, channelID string, txid string) error {
-	// Access public data by setting the collection to empty string
-	collection := ""
-	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model, seq)
-
-	value, err := json.Marshal(entityFieldDefinitions)
-	// Construct payload for PUT_STATE
-	payloadBytes := marshalOrPanic(&pb.PutState{Collection: collection, Key: key, Value: value})
-
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PUT_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelID}
-
-	// Execute the request and get response
+func (h *Handler) handleConditionQuery(collection string, search []byte,
+	channelID string, txid string) ([]byte, error) {
+	// Send GET_QUERY_RESULT message to peer chaincode support
+	payloadBytes := marshalOrPanic(&pb.GetQueryResult{Collection: collection, Query: "", Metadata: search})
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_QUERY_RESULT, Payload: payloadBytes, Txid: txid, ChannelId: channelID}
 	responseMsg, err := h.callPeerWithChaincodeMsg(msg, channelID, txid)
 	if err != nil {
-		return fmt.Errorf("[%s] error sending %s: %s", msg.Txid, pb.ChaincodeMessage_PUT_STATE, err)
+		return nil, fmt.Errorf("[%s] error sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_QUERY_RESULT)
 	}
 
 	if responseMsg.Type == pb.ChaincodeMessage_RESPONSE {
-		// Success response
-		return nil
+		return responseMsg.Payload, nil
 	}
-
 	if responseMsg.Type == pb.ChaincodeMessage_ERROR {
 		// Error response
-		return fmt.Errorf("%s", responseMsg.Payload[:])
+		return nil, fmt.Errorf("%s", responseMsg.Payload[:])
 	}
 
 	// Incorrect chaincode message received
-	return fmt.Errorf("[%s] incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+	return nil, fmt.Errorf("incorrect chaincode message %s received. Expecting %s or %s", responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
 // handleReady handles messages received from the peer when the handler is in the "ready" state.

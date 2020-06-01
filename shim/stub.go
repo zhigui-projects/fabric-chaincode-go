@@ -4,11 +4,16 @@
 package shim
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"os"
+	"reflect"
 	"unicode/utf8"
 
 	"github.com/golang/protobuf/proto"
@@ -332,7 +337,74 @@ func (s *ChaincodeStub) SetPrivateDataValidationParameter(collection, key string
 
 // CreateTable documentation can be found in interfaces.go
 func (s *ChaincodeStub) CreateTable(model interface{}, seq int) error {
-	return s.handler.handleCreateTable(model, seq, s.ChannelID, s.TxID)
+	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+		return errors.New("arg model must be a pointer")
+	}
+	// Access public data by setting the collection to empty string
+	collection := ""
+	key, entityFieldDefinitions, err := entitydefinition.RegisterEntity(model, seq)
+
+	value, err := json.Marshal(entityFieldDefinitions)
+	if err != nil {
+		return fmt.Errorf("failed to marshal model definition: %s", err)
+	}
+	return s.handler.handlePutState(collection, key, value, s.ChannelID, s.TxID)
+}
+
+func (s *ChaincodeStub) Get(model interface{}, id string) error {
+	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+		return errors.New("arg model must be a pointer")
+	}
+	// Access public data by setting the collection to empty string
+	collection := ""
+	modelBytes, err := s.handler.handleGetState(collection, id, s.ChannelID, s.TxID)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(modelBytes, model)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal model: %s", err)
+	}
+
+	return nil
+}
+
+func (s *ChaincodeStub) Save(model interface{}) error {
+	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+		return errors.New("arg model must be a pointer")
+	}
+	// Access public data by setting the collection to empty string
+	collection := ""
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
+	modelBytes, err := json.Marshal(model)
+	if err != nil {
+		return fmt.Errorf("failed to marshal model: %s", err)
+	}
+	return s.handler.handlePutState(collection, id, modelBytes, s.ChannelID, s.TxID)
+}
+
+func (s *ChaincodeStub) Delete(id string) error {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return s.handler.handleDelState(collection, id, s.ChannelID, s.TxID)
+}
+
+func (s *ChaincodeStub) ConditionQuery(models interface{}, search entitydefinition.Search) error {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	var searchBytes bytes.Buffer
+	e := gob.NewEncoder(&searchBytes)
+	err := e.Encode(&search)
+	if err != nil {
+		return fmt.Errorf("failed to encode search: %s", err)
+	}
+	modelsBytes, err := s.handler.handleConditionQuery(collection, searchBytes.Bytes(), s.ChannelID, s.TxID)
+	err = json.Unmarshal(modelsBytes, &models)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal models: %s", err)
+	}
+	return nil
 }
 
 // CommonIterator documentation can be found in interfaces.go

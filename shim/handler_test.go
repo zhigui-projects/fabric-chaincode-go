@@ -4,7 +4,10 @@
 package shim
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"testing"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim/internal/mock"
@@ -294,6 +297,11 @@ func TestHandlePeerCalls(t *testing.T) {
 	_, err = h.handleGetHistoryForKey("key", "channel", "txid")
 	assert.Contains(t, err.Error(), "cannot create response channel")
 
-	err = h.handleCreateTable(&TestSubModel{}, 1, "channel", "txid")
-	assert.Contains(t, err.Error(), "cannot create response channel")
+	search := &entitydefinition.Search{}
+	_ = search.Where("id = ?", "test1")
+	var searchBytes bytes.Buffer
+	e := gob.NewEncoder(&searchBytes)
+	_ = e.Encode(search)
+	_, err = h.handleConditionQuery("", searchBytes.Bytes(), "channel", "txid")
+	assert.Contains(t, err.Error(), "[txid] error sending GET_QUERY_RESULT")
 }

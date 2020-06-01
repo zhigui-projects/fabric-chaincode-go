@@ -5,6 +5,7 @@ package shim
 
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 )
@@ -352,7 +353,24 @@ type ChaincodeStubInterface interface {
 	// slice of field definitions. This function is like PutState, when map
 	// is committed, it will save entity definition to meta table and create
 	// entity table in underlying relation database.
-	CreateTable(models interface{}, seq int) error
+	CreateTable(model interface{}, seq int) error
+
+	// Save saves the specified `model` into the transaction's
+	// writeset as a data-write proposal which is like PutState. The model
+	// must have a ID field of string type which is a unique identity and
+	// it must be a pointer.
+	Save(model interface{}) error
+
+	// Get returns the value of the specified `id` from the ledger which is
+	// like GetState. The model arg must be a pointer.
+	Get(model interface{}, id string) error
+
+	// Delete deletes the value of the specified `id` from the ledger.
+	Delete(id string) error
+
+	// ConditionQuery returns the slice of model with specific search condition.
+	// The arg models must be a slice of model
+	ConditionQuery(models interface{}, search entitydefinition.Search) error
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result
