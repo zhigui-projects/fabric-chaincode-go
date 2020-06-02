@@ -361,16 +361,16 @@ type ChaincodeStubInterface interface {
 	// it must be a pointer.
 	Save(model interface{}) error
 
-	// Get returns the value of the specified `id` from the ledger which is
+	// Get returns the value of the specified `model` by id from the ledger which is
 	// like GetState. The model arg must be a pointer.
-	Get(model interface{}, id string) error
+	Get(model interface{}) error
 
-	// Delete deletes the value of the specified `id` from the ledger.
-	Delete(id string) error
+	// Delete deletes the value of the specified `model` by id from the ledger.
+	Delete(model interface{}) error
 
 	// ConditionQuery returns the slice of model with specific search condition.
 	// The arg models must be a slice of model
-	ConditionQuery(models interface{}, search entitydefinition.Search) error
+	ConditionQuery(models interface{}, search *entitydefinition.Search) error
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

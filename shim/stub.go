@@ -337,8 +337,17 @@ func (s *ChaincodeStub) SetPrivateDataValidationParameter(collection, key string
 
 // CreateTable documentation can be found in interfaces.go
 func (s *ChaincodeStub) CreateTable(model interface{}, seq int) error {
-	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+	t := reflect.TypeOf(model)
+	if reflect.Ptr != t.Kind() {
 		return errors.New("arg model must be a pointer")
+	}
+	e := t.Elem()
+	if e.Kind() != reflect.Struct {
+		return errors.New("model value must be a struct")
+	}
+	_, exist := e.FieldByName("ID")
+	if !exist {
+		return errors.New("model must have an ID field")
 	}
 	// Access public data by setting the collection to empty string
 	collection := ""
@@ -348,16 +357,30 @@ func (s *ChaincodeStub) CreateTable(model interface{}, seq int) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal model definition: %s", err)
 	}
-	return s.handler.handlePutState(collection, key, value, s.ChannelID, s.TxID)
+	return s.handler.handlePutState(collection, entitydefinition.EFD+entitydefinition.ORMDB_SEPERATOR+key, value, s.ChannelID, s.TxID)
 }
 
-func (s *ChaincodeStub) Get(model interface{}, id string) error {
-	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+func (s *ChaincodeStub) Get(model interface{}) error {
+	t := reflect.TypeOf(model)
+	if reflect.Ptr != t.Kind() {
 		return errors.New("arg model must be a pointer")
+	}
+	e := t.Elem()
+	if e.Kind() != reflect.Struct {
+		return errors.New("model value must be a struct")
+	}
+	_, exist := e.FieldByName("ID")
+	if !exist {
+		return errors.New("model must have an ID field")
+	}
+
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
+	if id == "" {
+		return errors.New("model must have ID value")
 	}
 	// Access public data by setting the collection to empty string
 	collection := ""
-	modelBytes, err := s.handler.handleGetState(collection, id, s.ChannelID, s.TxID)
+	modelBytes, err := s.handler.handleGetState(collection, e.Name()+entitydefinition.ORMDB_SEPERATOR+id, s.ChannelID, s.TxID)
 	if err != nil {
 		return err
 	}
@@ -371,31 +394,75 @@ func (s *ChaincodeStub) Get(model interface{}, id string) error {
 }
 
 func (s *ChaincodeStub) Save(model interface{}) error {
-	if reflect.Ptr != reflect.TypeOf(model).Kind() {
+	t := reflect.TypeOf(model)
+	if reflect.Ptr != t.Kind() {
 		return errors.New("arg model must be a pointer")
+	}
+	e := t.Elem()
+	if e.Kind() != reflect.Struct {
+		return errors.New("model value must be a struct")
+	}
+	_, exist := e.FieldByName("ID")
+	if !exist {
+		return errors.New("model must have an ID field")
+	}
+
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
+	if id == "" {
+		return errors.New("model must have ID value")
 	}
 	// Access public data by setting the collection to empty string
 	collection := ""
-	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
 	modelBytes, err := json.Marshal(model)
 	if err != nil {
 		return fmt.Errorf("failed to marshal model: %s", err)
 	}
-	return s.handler.handlePutState(collection, id, modelBytes, s.ChannelID, s.TxID)
+	return s.handler.handlePutState(collection, e.Name()+entitydefinition.ORMDB_SEPERATOR+id, modelBytes, s.ChannelID, s.TxID)
 }
 
-func (s *ChaincodeStub) Delete(id string) error {
+func (s *ChaincodeStub) Delete(model interface{}) error {
+	t := reflect.TypeOf(model)
+	if reflect.Ptr != t.Kind() {
+		return errors.New("arg model must be a pointer")
+	}
+	e := t.Elem()
+	if e.Kind() != reflect.Struct {
+		return errors.New("model value must be a struct")
+	}
+	_, exist := e.FieldByName("ID")
+	if !exist {
+		return errors.New("model must have an ID field")
+	}
+
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
+	if id == "" {
+		return errors.New("model must have ID value")
+	}
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return s.handler.handleDelState(collection, id, s.ChannelID, s.TxID)
+	return s.handler.handleDelState(collection, e.Name()+entitydefinition.ORMDB_SEPERATOR+id, s.ChannelID, s.TxID)
 }
 
-func (s *ChaincodeStub) ConditionQuery(models interface{}, search entitydefinition.Search) error {
+func (s *ChaincodeStub) ConditionQuery(models interface{}, search *entitydefinition.Search) error {
+	t := reflect.TypeOf(models)
+	if reflect.Slice != t.Kind() {
+		return errors.New("arg models must be a slice")
+	}
+	e := t.Elem()
+	if e.Kind() != reflect.Struct {
+		return errors.New("models value must be a struct")
+	}
+	_, exist := e.FieldByName("ID")
+	if !exist {
+		return errors.New("model must have an ID field")
+	}
+
+	search.Entity = e.Name()
 	// Access public data by setting the collection to empty string
 	collection := ""
 	var searchBytes bytes.Buffer
-	e := gob.NewEncoder(&searchBytes)
-	err := e.Encode(&search)
+	en := gob.NewEncoder(&searchBytes)
+	err := en.Encode(search)
 	if err != nil {
 		return fmt.Errorf("failed to encode search: %s", err)
 	}

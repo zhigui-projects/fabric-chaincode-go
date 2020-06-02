@@ -676,7 +676,7 @@ func TestChaincodeStub_Save(t *testing.T) {
 		return nil
 	}
 	handler.chatStream = chatStream
-	err := stub.Save(&TestSubModel{})
+	err := stub.Save(&TestSubModel{ID: "ID"})
 	assert.NoError(t, err)
 
 }
@@ -712,8 +712,8 @@ func TestChaincodeStub_Get(t *testing.T) {
 		return nil
 	}
 	handler.chatStream = chatStream
-	actual := &TestSubModel{}
-	err = stub.Get(actual, "id")
+	actual := &TestSubModel{ID: "id"}
+	err = stub.Get(actual)
 	assert.Equal(t, "name", actual.Name)
 	assert.NoError(t, err)
 }
@@ -747,7 +747,7 @@ func TestChaincodeStub_Delete(t *testing.T) {
 		return nil
 	}
 	handler.chatStream = chatStream
-	err := stub.Delete("id")
+	err := stub.Delete(&TestSubModel{ID: "id"})
 	assert.NoError(t, err)
 
 }
@@ -790,7 +790,7 @@ func TestChaincodeStub_ConditionQuery(t *testing.T) {
 	search := &entitydefinition.Search{}
 	_ = search.Not("id = ?", "id")
 	_ = search.Where("name = ?", "name")
-	err = stub.ConditionQuery(actualModels, *search)
+	err = stub.ConditionQuery(actualModels, search)
 	assert.NoError(t, err)
 
 }

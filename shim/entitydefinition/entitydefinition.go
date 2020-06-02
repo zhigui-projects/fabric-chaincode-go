@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	ORMDB_SEPERATOR = "$#$"
+	EFD             = "EntityFieldDefinition"
+	ORMDB_SEPERATOR = "$$"
 )
 
 const (

@@ -78,13 +78,14 @@ type MockStub struct {
 	Decorations map[string][]byte
 }
 
-func (stub *MockStub) Get(model interface{}, id string) error {
+func (stub *MockStub) Get(model interface{}) error {
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
 	value := stub.State[id]
 	_ = json.Unmarshal(value, model)
 	return nil
 }
 
-func (stub *MockStub) ConditionQuery(models interface{}, search entitydefinition.Search) error {
+func (stub *MockStub) ConditionQuery(models interface{}, search *entitydefinition.Search) error {
 	return errors.New("not implemented")
 }
 
@@ -590,7 +591,8 @@ func (stub *MockStub) Save(model interface{}) error {
 }
 
 // Delete removes the specified `model` from the ledger.
-func (stub *MockStub) Delete(id string) error {
+func (stub *MockStub) Delete(model interface{}) error {
+	id := reflect.ValueOf(model).Elem().FieldByName("ID").String()
 	delete(stub.State, id)
 
 	for elem := stub.Keys.Front(); elem != nil; elem = elem.Next() {
