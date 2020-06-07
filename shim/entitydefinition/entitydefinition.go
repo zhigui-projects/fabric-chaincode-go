@@ -73,7 +73,7 @@ type EntityFieldDefinition struct {
 	IsDataType  bool              `json:"is_data_type"`
 	DatatypeKey byte              `json:"datatype_key"`
 	ID          string            `json:"id"`
-	VerAndMeta  string            `json:"ver_and_meta"`
+	VerAndMeta  string            `json:"-"`
 	Owner       string            `json:"owner"`
 	Seq         int               `json:"seq"`
 }
