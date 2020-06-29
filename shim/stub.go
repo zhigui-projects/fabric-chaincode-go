@@ -467,7 +467,8 @@ func (s *ChaincodeStub) ConditionQuery(models interface{}, search *entitydefinit
 		return fmt.Errorf("failed to encode search: %s", err)
 	}
 	modelsBytes, err := s.handler.handleConditionQuery(collection, searchBytes.Bytes(), s.ChannelID, s.TxID)
-	err = json.Unmarshal(modelsBytes, &models)
+	fmt.Printf("modelbytes %v", modelsBytes)
+	err = json.Unmarshal(modelsBytes, models)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal models: %s", err)
 	}
