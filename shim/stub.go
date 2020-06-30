@@ -445,13 +445,18 @@ func (s *ChaincodeStub) Delete(model interface{}) error {
 
 func (s *ChaincodeStub) ConditionQuery(models interface{}, search *entitydefinition.Search) error {
 	t := reflect.TypeOf(models)
-	if reflect.Slice != t.Kind() {
-		return errors.New("arg models must be a slice")
+	if reflect.Ptr != t.Kind() {
+		return errors.New("arg models must be a pointer")
 	}
-	e := t.Elem()
+	sli := t.Elem()
+	if sli.Kind() != reflect.Slice {
+		return errors.New("models value must be a slice")
+	}
+	e := sli.Elem()
 	if e.Kind() != reflect.Struct {
 		return errors.New("models value must be a struct")
 	}
+
 	_, exist := e.FieldByName("ID")
 	if !exist {
 		return errors.New("model must have an ID field")
@@ -467,7 +472,6 @@ func (s *ChaincodeStub) ConditionQuery(models interface{}, search *entitydefinit
 		return fmt.Errorf("failed to encode search: %s", err)
 	}
 	modelsBytes, err := s.handler.handleConditionQuery(collection, searchBytes.Bytes(), s.ChannelID, s.TxID)
-	fmt.Printf("modelbytes %v", modelsBytes)
 	err = json.Unmarshal(modelsBytes, models)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal models: %s", err)
